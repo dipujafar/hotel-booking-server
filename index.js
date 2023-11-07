@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+var cookieParser = require('cookie-parser');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
@@ -8,10 +9,11 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors({
-  origin: ['http://localhost:5173/'],
-  credentials:true
+  origin: ['http://localhost:5173'],
+  credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 const verify = async(req, res, next)=>{
   const token = req?.cookies?.token;
@@ -45,6 +47,10 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
+
+    const roomCollection = client.db('hotelRooms').collection('rooms');
+
+    //jwt related api
     app.post('/jwt', async(req,res)=>{
       try{
         const user = req.body;
@@ -63,6 +69,21 @@ async function run() {
       catch{(error)=>{
         console.log(error)
       }}
+    })
+
+    //room related apis
+    app.get('/rooms', async(req,res)=>{
+      try{
+         const query = {availability: true};
+      const options = {
+        projection: { _id: 1, image: 1, price_per_night: 1, reviews: 1},
+      };
+
+      const result = await roomCollection.find(query, options).toArray();
+      res.send(result)
+      }
+      catch{(error)=>console.log(error)}
+     
     })
 
     await client.db("admin").command({ ping: 1 });
