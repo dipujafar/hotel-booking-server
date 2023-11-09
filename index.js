@@ -49,6 +49,7 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const roomCollection = client.db('hotelRooms').collection('rooms');
+    const bookingCollection = client.db('hotelRooms').collection('booking');
 
     //jwt related api
     app.post('/jwt', async(req,res)=>{
@@ -91,6 +92,14 @@ async function run() {
       const query = {_id: new ObjectId(id)};
       const result = await roomCollection.findOne(query);
       res.send(result)
+    });
+
+
+    // booking related apis
+    app.post('/booking', async(req,res)=>{
+      const room = req.body;
+      const result = await roomCollection.insertOne(room);
+      res.send(result);
     })
 
     await client.db("admin").command({ ping: 1 });
