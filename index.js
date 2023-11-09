@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173', "https://hotel-booking-38b24.web.app"],
   credentials: true
 }));
 app.use(express.json());
@@ -45,7 +45,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
 
     const roomCollection = client.db('hotelRooms').collection('rooms');
@@ -136,7 +136,22 @@ async function run() {
         res.send(result)
       }
       catch{}
+    });
+    app.delete('/myBooking/id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await bookingCollection.deleteOne(query);
+      res.send(result)
     })
+
+    app.post("/logout", async(req,res)=>{
+      try{
+        res.clearCookie('token', {maxAge: 0}).send({message: "success"});
+      }
+      catch{}
+    });
+
+    
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
