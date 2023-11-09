@@ -25,7 +25,7 @@ const verify = async(req, res, next)=>{
     if(err){
       return res.status(401).send({message : "Unauthorized Access"})
     }
-    res.user = decoded;
+    req.user = decoded;
     next()
   })
 }
@@ -55,7 +55,6 @@ async function run() {
     app.post('/jwt', async(req,res)=>{
       try{
         const user = req.body;
-        console.log(user);
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
           expiresIn : '1h'
         });
@@ -88,18 +87,55 @@ async function run() {
     });
 
     app.get('/rooms/:id', async(req, res)=>{
+      try{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const result = await roomCollection.findOne(query);
-      res.send(result)
+      res.send(result);
+      }
+      catch{}
     });
+
+    app.patch('/updateAvailable/:id', async(req,res)=>{
+      try{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateData = {
+        $set: {
+          availability : false
+        }
+      }
+      const result = await roomCollection.updateOne(filter, updateData);
+      res.send(result); 
+      }
+      catch{}
+    });
+
 
 
     // booking related apis
     app.post('/booking', async(req,res)=>{
+      try{
       const room = req.body;
-      const result = await roomCollection.insertOne(room);
+      const result = await bookingCollection.insertOne(room);
       res.send(result);
+      }
+      catch{}
+    });
+
+    app.get('/myBooking', verify, async(req, res)=>{
+      try{
+        const queryEmail = req.query?.email;
+        const userEmail = req?.user?.email;
+        if(queryEmail !== userEmail){
+          return res.status(403).send({message:"forbidden"})
+        }
+        const option = {email: {$in: [userEmail]}};
+        const result = await bookingCollection.find(option).toArray();
+
+        res.send(result)
+      }
+      catch{}
     })
 
     await client.db("admin").command({ ping: 1 });
